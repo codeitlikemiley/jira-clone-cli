@@ -6,7 +6,9 @@ pub enum Status {
 }
 
 pub struct Epic {
-    // TODO: add fields (make sure the fields are public)
+    name: String,
+    descriotion: String,
+    status: Status,
 }
 
 impl Epic {
