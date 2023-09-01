@@ -26,13 +26,20 @@ impl Epic {
     }
 }
 
+#[derive(Default)]
 pub struct Story {
-    // TODO: add fields (make sure the fields are public)
+    pub name: String,
+    pub description: String,
+    pub status: Status,
 }
 
 impl Story {
     pub fn new(name: String, description: String) -> Self {
-        todo!() // by default the status should be set to open
+        Self {
+            name,
+            description,
+            ..Default::default()
+        }
     }
 }
 
@@ -48,6 +55,12 @@ mod tests {
     #[test]
     fn test_epic_creation() {
         let default = Epic::new("".to_string(), "".to_string());
+        assert_eq!(default.status, Status::Open);
+    }
+
+    #[test]
+    fn test_story_creation() {
+        let default = Story::new("".to_string(), "".to_string());
         assert_eq!(default.status, Status::Open);
     }
 }
