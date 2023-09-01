@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-#[derive(Default, Debug, PartialEq)]
+// TODO: derive the appropriate traits
+#[derive(Default, Debug, PartialEq, Clone)]
 pub enum Status {
     // this set the default Status
     #[default]
@@ -10,11 +11,13 @@ pub enum Status {
     Closed,
 }
 
-#[derive(Default)]
+// TODO: derive the appropriate traits
+#[derive(Default, Debug, Clone)]
 pub struct Epic {
     pub name: String,
     pub description: String,
     pub status: Status,
+    pub stories: Vec<u32>,
 }
 
 impl Epic {
@@ -28,7 +31,8 @@ impl Epic {
     }
 }
 
-#[derive(Default)]
+// TODO: derive the appropriate traits
+#[derive(Default, Debug)]
 pub struct Story {
     pub name: String,
     pub description: String,
@@ -45,6 +49,7 @@ impl Story {
     }
 }
 
+// TODO: derive the appropriate traits
 pub struct DBState {
     pub last_item_id: u32,
     pub epics: HashMap<u32, Epic>,
