@@ -1,28 +1,73 @@
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default)]
 pub enum Status {
-    // TODO: add fields (make sure the fields are public)
+    // this set the default Status
+    #[default]
+    Open,
+    InProgress,
+    Resolved,
+    Closed,
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default)]
 pub struct Epic {
-    // TODO: add fields (make sure the fields are public)
+    pub name: String,
+    pub description: String,
+    pub status: Status,
+    pub stories: Vec<u32>,
 }
 
 impl Epic {
     pub fn new(name: String, description: String) -> Self {
-        todo!() // by default the status should be set to open and the stories should be an empty vector
+        Self {
+            name,
+            description,
+            // this set the default Status
+            ..Default::default()
+        }
     }
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default)]
 pub struct Story {
-    // TODO: add fields (make sure the fields are public)
+    pub name: String,
+    pub description: String,
+    pub status: Status,
 }
 
 impl Story {
     pub fn new(name: String, description: String) -> Self {
-        todo!() // by default the status should be set to open
+        Self {
+            name,
+            description,
+            ..Default::default()
+        }
     }
 }
 
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
 pub struct DBState {
-    // This struct represents the entire db state which includes the last_item_id, epics, and stories
-    // TODO: add fields (make sure the fields are public)
+    pub last_item_id: u32,
+    pub epics: HashMap<u32, Epic>,
+    pub stories: HashMap<u32, Story>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_epic_creation() {
+        let default = Epic::new("".to_string(), "".to_string());
+        assert_eq!(default.status, Status::Open);
+    }
+
+    #[test]
+    fn test_story_creation() {
+        let default = Story::new("".to_string(), "".to_string());
+        assert_eq!(default.status, Status::Open);
+    }
 }
