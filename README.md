@@ -1,3 +1,5 @@
+[![Rust Build and Test](https://github.com/codeitlikemiley/jira-clone-cli/actions/workflows/rust.yml/badge.svg)](https://github.com/codeitlikemiley/jira-clone-cli/actions/workflows/rust.yml)
+
 # Stage 1
 
 __Database and Models__
