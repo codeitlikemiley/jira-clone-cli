@@ -1,19 +1,28 @@
+#[derive(Default, Debug, PartialEq)]
 pub enum Status {
+    // this set the default Status
+    #[default]
     Open,
     InProgress,
     Resolved,
     Closed,
 }
 
+#[derive(Default)]
 pub struct Epic {
-    name: String,
-    descriotion: String,
-    status: Status,
+    pub name: String,
+    pub description: String,
+    pub status: Status,
 }
 
 impl Epic {
     pub fn new(name: String, description: String) -> Self {
-        todo!() // by default the status should be set to open and the stories should be an empty vector
+        Self {
+            name,
+            description,
+            // this set the default Status
+            ..Default::default()
+        }
     }
 }
 
@@ -30,4 +39,15 @@ impl Story {
 pub struct DBState {
     // This struct represents the entire db state which includes the last_item_id, epics, and stories
     // TODO: add fields (make sure the fields are public)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_epic_creation() {
+        let default = Epic::new("".to_string(), "".to_string());
+        assert_eq!(default.status, Status::Open);
+    }
 }
