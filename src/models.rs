@@ -1,5 +1,8 @@
 pub enum Status {
-    // TODO: add fields (make sure the fields are public)
+    Open,
+    InProgress,
+    Resolved,
+    Closed,
 }
 
 pub struct Epic {
