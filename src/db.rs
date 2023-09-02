@@ -82,7 +82,31 @@ impl JiraDatabase {
     }
 
     pub fn delete_story(&self, epic_id: u32, story_id: u32) -> Result<()> {
-        todo!()
+        let mut dbstate = self.read_db()?;
+
+        // we get the epic from epics using epic_id
+        match dbstate.epics.get_mut(&epic_id) {
+            Some(epic) =>
+            // next using epic we remove the entry from stories vector
+            {
+                epic.stories.retain(|&id| id != story_id)
+            }
+            None => return Err(anyhow!("Epic with id {} not found", epic_id)),
+        }
+
+        // next we get the story from stories using story_id
+        // note we dont need a mutable dbstate here to remove stories
+        match dbstate.stories.get(&story_id) {
+            Some(_) => {
+                // remove the story from stories hashmap
+                dbstate.stories.remove(&story_id);
+            }
+            None => return Err(anyhow!("Story with id {} not found", story_id)),
+        }
+
+        // write to db
+        self.database.write_db(&dbstate)?;
+        Ok(())
     }
 
     pub fn update_epic_status(&self, epic_id: u32, status: Status) -> Result<()> {
@@ -203,7 +227,6 @@ mod tests {
 
         let epic_id = result.unwrap();
 
-        // TODO: fix this error by deriving the appropriate traits for Story
         let result = db.create_story(story.clone(), epic_id);
         assert_eq!(result.is_ok(), true);
 
