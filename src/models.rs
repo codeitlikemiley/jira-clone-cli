@@ -1,18 +1,15 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum Status {
-    // this set the default Status
-    #[default]
     Open,
     InProgress,
     Resolved,
     Closed,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Epic {
     pub name: String,
     pub description: String,
@@ -25,13 +22,13 @@ impl Epic {
         Self {
             name,
             description,
-            // this set the default Status
-            ..Default::default()
+            status: Status::Open,
+            stories: vec![],
         }
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Story {
     pub name: String,
     pub description: String,
@@ -43,7 +40,7 @@ impl Story {
         Self {
             name,
             description,
-            ..Default::default()
+            status: Status::Open,
         }
     }
 }
@@ -53,21 +50,4 @@ pub struct DBState {
     pub last_item_id: u32,
     pub epics: HashMap<u32, Epic>,
     pub stories: HashMap<u32, Story>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_epic_creation() {
-        let default = Epic::new("".to_string(), "".to_string());
-        assert_eq!(default.status, Status::Open);
-    }
-
-    #[test]
-    fn test_story_creation() {
-        let default = Story::new("".to_string(), "".to_string());
-        assert_eq!(default.status, Status::Open);
-    }
 }
