@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     fs::{self, read_to_string},
 };
 
@@ -52,7 +52,33 @@ impl JiraDatabase {
     }
 
     pub fn delete_epic(&self, epic_id: u32) -> Result<()> {
-        todo!()
+        // 1. read db
+        let mut dbstate = self.read_db()?;
+        // 2. we would need to delete stories associated with epic
+        match &mut dbstate.epics.get(&epic_id) {
+            // check if we have the some variant
+            Some(epic) => {
+                // get all stories id as a HashSet so we get unique ids
+                let story_ids_to_remove: HashSet<_> = epic.stories.iter().collect();
+
+                // remove stories from stories hashmap
+                dbstate
+                    // we use retain to keep the stories that are not in the story_ids_to_remove
+                    .stories
+                    // retain only the stories that are not in the story_ids_to_remove
+                    // that deletes the stories from the stories hashmap
+                    // this is the most efficient way to delete items from a hashmap
+                    .retain(|k, _| !story_ids_to_remove.contains(k));
+            }
+            None => return Err(anyhow!("Epic with id {} not found", epic_id)),
+        }
+
+        // 3. delete epic
+        dbstate.epics.remove(&epic_id);
+
+        // 4. write db
+        self.database.write_db(&dbstate)?;
+        Ok(())
     }
 
     pub fn delete_story(&self, epic_id: u32, story_id: u32) -> Result<()> {
