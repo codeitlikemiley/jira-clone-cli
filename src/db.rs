@@ -1,28 +1,54 @@
-use std::fs;
+use std::{
+    collections::HashMap,
+    fs::{self, read_to_string},
+};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 
 use crate::models::{DBState, Epic, Status, Story};
 
 pub struct JiraDatabase {
+    // we can use here anything that implements Database trait
     database: Box<dyn Database>,
 }
 
 impl JiraDatabase {
     pub fn new(file_path: String) -> Self {
-        todo!()
+        Self {
+            // JSONFileDatabase implements Database
+            database: Box::new(JSONFileDatabase { file_path }),
+        }
     }
 
     pub fn read_db(&self) -> Result<DBState> {
-        todo!()
+        self.database.read_db()
     }
 
     pub fn create_epic(&self, epic: Epic) -> Result<u32> {
-        todo!()
+        let mut dbstate = self.read_db()?;
+        let new_id = dbstate.last_item_id + 1;
+        dbstate.last_item_id = new_id;
+        dbstate.epics.insert(new_id, epic);
+        self.database.write_db(&dbstate)?;
+        Ok(new_id)
     }
 
     pub fn create_story(&self, story: Story, epic_id: u32) -> Result<u32> {
-        todo!()
+        let mut dbstate = self.read_db()?;
+        let new_id = dbstate.last_item_id + 1;
+        dbstate.last_item_id = new_id;
+        // insert story into stories hashmap
+        dbstate.stories.insert(new_id, story);
+        // we need to update epics hashmap , we need to get the epic using epic_id
+
+        match dbstate.epics.get_mut(&epic_id) {
+            Some(epic) => epic.stories.push(new_id),
+            None => Err(anyhow!("Epic with id {} not found", epic_id))?,
+        }
+
+        // after finding the id , we need to insert the new_id on stories vector
+        self.database.write_db(&dbstate)?;
+        Ok(new_id)
     }
 
     pub fn delete_epic(&self, epic_id: u32) -> Result<()> {
@@ -87,14 +113,12 @@ pub mod test_utils {
 
     impl Database for MockDB {
         fn read_db(&self) -> Result<DBState> {
-            // TODO: fix this error by deriving the appropriate traits for Story
             let state = self.last_written_state.borrow().clone();
             Ok(state)
         }
 
         fn write_db(&self, db_state: &DBState) -> Result<()> {
             let latest_state = &self.last_written_state;
-            // TODO: fix this error by deriving the appropriate traits for DBState
             *latest_state.borrow_mut() = db_state.clone();
             Ok(())
         }
@@ -113,7 +137,6 @@ mod tests {
         };
         let epic = Epic::new("".to_owned(), "".to_owned());
 
-        // TODO: fix this error by deriving the appropriate traits for Epic
         let result = db.create_epic(epic.clone());
 
         assert_eq!(result.is_ok(), true);
@@ -388,11 +411,16 @@ mod tests {
 
         #[test]
         fn read_db_should_fail_with_invalid_json() {
+            // 1. Arrange
+            // create a tempfile
             let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-
+            // set up json string
             let file_contents = r#"{ "last_item_id": 0 epics: {} stories {} }"#;
+            // execute write operation on file_contents to tmpfile
             write!(tmpfile, "{}", file_contents).unwrap();
 
+            //2 . Act
+            // use tmpfile  , cast to str  to get path
             let db = JSONFileDatabase {
                 file_path: tmpfile
                     .path()
@@ -403,6 +431,7 @@ mod tests {
 
             let result = db.read_db();
 
+            //3. Assert
             assert_eq!(result.is_err(), true);
         }
 
@@ -473,4 +502,3 @@ mod tests {
         }
     }
 }
-
