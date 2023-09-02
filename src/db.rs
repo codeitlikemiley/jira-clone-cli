@@ -110,11 +110,34 @@ impl JiraDatabase {
     }
 
     pub fn update_epic_status(&self, epic_id: u32, status: Status) -> Result<()> {
-        todo!()
+        // 1. read db
+        let mut dbstate = self.read_db()?;
+        // 2. get epic using epic_id from epics hashmap
+        if let Some(epic) = dbstate.epics.get_mut(&epic_id) {
+            // 3. mutate the status
+            epic.status = status;
+        } else {
+            return Err(anyhow!("Epic with id {} not found", epic_id));
+        }
+        self.database.write_db(&dbstate)?;
+        // 4. write to db
+        Ok(())
     }
 
     pub fn update_story_status(&self, story_id: u32, status: Status) -> Result<()> {
-        todo!()
+        //1. read db
+        let mut dbstate = self.read_db()?;
+        //2. get story using story_id from stories hashmap
+        dbstate
+            .stories
+            .get_mut(&story_id)
+            .ok_or_else(|| anyhow!("Story with id {} not found", story_id))?
+            .status = status;
+
+        //3. update status of story
+        //4. write to db
+        self.database.write_db(&dbstate)?;
+        Ok(())
     }
 }
 
