@@ -45,7 +45,7 @@ fn delete_epic_prompt() -> bool {
     println!("----------------------------");
     println!("Are you sure you want to delete this epic? All stories in this epic will also be deleted [Y/n]:");
     let input = get_user_input();
-    match input {
+    match input.to_string().as_str() {
         "" => true,
         "y" | "Y" | "yes" | "Yes" | "YES" => true,
         "n" | "N" | "no" | "No" | "NO" => false,
@@ -55,9 +55,9 @@ fn delete_epic_prompt() -> bool {
 
 fn delete_story_prompt() -> bool {
     println!("----------------------------");
-    printn!("Are you sure you want to delete this story? [Y/n]: Y");
+    println!("Are you sure you want to delete this story? [Y/n]: Y");
     let input = get_user_input();
-    match input {
+    match input.to_string().as_str() {
         "" => true,
         "y" | "Y" | "yes" | "Yes" | "YES" => true,
         "n" | "N" | "no" | "No" | "NO" => false,
@@ -69,16 +69,16 @@ fn update_status_prompt() -> Option<Status> {
     println!("----------------------------");
     println!("New Status (1 - OPEN, 2 - IN-PROGRESS, 3 - RESOLVED, 4 - CLOSED):");
     let input = get_user_input();
-    let status = status.trim().parse::<u8>()?;
+    let status = input.trim().parse::<u8>();
 
     if let Ok(status) = status {
-        match input {
+        match status {
             1 => Some(Status::Open),
             2 => Some(Status::InProgress),
             3 => Some(Status::Resolved),
             4 => Some(Status::Closed),
             _ => None,
-        }
+        };
     }
+    None
 }
-
