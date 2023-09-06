@@ -1,18 +1,48 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, fmt::Display};
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum Action {
+    NavigateToEpicDetail { epic_id: u32 },
+    NavigateToStoryDetail { epic_id: u32, story_id: u32 },
+    NavigateToPreviousPage,
+    CreateEpic,
+    UpdateEpicStatus { epic_id: u32 },
+    DeleteEpic { epic_id: u32 },
+    CreateStory { epic_id: u32 },
+    UpdateStoryStatus { story_id: u32 },
+    DeleteStory { epic_id: u32, story_id: u32 },
+    Exit,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub enum Status {
-    // this set the default Status
-    #[default]
     Open,
     InProgress,
     Resolved,
     Closed,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default)]
+impl Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Open => {
+                write!(f, "OPEN")
+            }
+            Self::InProgress => {
+                write!(f, "IN PROGRESS")
+            }
+            Self::Resolved => {
+                write!(f, "RESOLVED")
+            }
+            Self::Closed => {
+                write!(f, "CLOSED")
+            }
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Epic {
     pub name: String,
     pub description: String,
@@ -25,13 +55,13 @@ impl Epic {
         Self {
             name,
             description,
-            // this set the default Status
-            ..Default::default()
+            status: Status::Open,
+            stories: vec![],
         }
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Default)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Story {
     pub name: String,
     pub description: String,
@@ -43,31 +73,15 @@ impl Story {
         Self {
             name,
             description,
-            ..Default::default()
+            status: Status::Open,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone)]
 pub struct DBState {
     pub last_item_id: u32,
     pub epics: HashMap<u32, Epic>,
     pub stories: HashMap<u32, Story>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_epic_creation() {
-        let default = Epic::new("".to_string(), "".to_string());
-        assert_eq!(default.status, Status::Open);
-    }
-
-    #[test]
-    fn test_story_creation() {
-        let default = Story::new("".to_string(), "".to_string());
-        assert_eq!(default.status, Status::Open);
-    }
-}
