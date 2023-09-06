@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt::Display};
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Action {
@@ -23,9 +23,20 @@ pub enum Status {
     Closed,
 }
 
-impl Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+impl Status {
+    fn as_str(&self) -> String {
+        match self {
+            Status::Open => "OPEN".to_string(),
+            Status::InProgress => "IN PROGRESS".to_string(),
+            Status::Resolved => "RESOLVED".to_string(),
+            Status::Closed => "Closed".to_string(),
+        }
+    }
+}
+
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.as_str())
     }
 }
 
