@@ -1,21 +1,16 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fs::{self, read_to_string},
-};
+use std::fs;
 
 use anyhow::{anyhow, Result};
 
 use crate::models::{DBState, Epic, Status, Story};
 
 pub struct JiraDatabase {
-    // we can use here anything that implements Database trait
     pub database: Box<dyn Database>,
 }
 
 impl JiraDatabase {
     pub fn new(file_path: String) -> Self {
         Self {
-            // JSONFileDatabase implements Database
             database: Box::new(JSONFileDatabase { file_path }),
         }
     }
@@ -25,118 +20,99 @@ impl JiraDatabase {
     }
 
     pub fn create_epic(&self, epic: Epic) -> Result<u32> {
-        let mut dbstate = self.read_db()?;
-        let new_id = dbstate.last_item_id + 1;
-        dbstate.last_item_id = new_id;
-        dbstate.epics.insert(new_id, epic);
-        self.database.write_db(&dbstate)?;
+        let mut parsed = self.database.read_db()?;
+
+        let last_id = parsed.last_item_id;
+        let new_id = last_id + 1;
+
+        parsed.last_item_id = new_id;
+        parsed.epics.insert(new_id, epic);
+
+        self.database.write_db(&parsed)?;
         Ok(new_id)
     }
 
     pub fn create_story(&self, story: Story, epic_id: u32) -> Result<u32> {
-        let mut dbstate = self.read_db()?;
-        let new_id = dbstate.last_item_id + 1;
-        dbstate.last_item_id = new_id;
-        // insert story into stories hashmap
-        dbstate.stories.insert(new_id, story);
-        // we need to update epics hashmap , we need to get the epic using epic_id
+        let mut parsed = self.database.read_db()?;
 
-        match dbstate.epics.get_mut(&epic_id) {
-            Some(epic) => epic.stories.push(new_id),
-            None => Err(anyhow!("Epic with id {} not found", epic_id))?,
-        }
+        let last_id = parsed.last_item_id;
+        let new_id = last_id + 1;
 
-        // after finding the id , we need to insert the new_id on stories vector
-        self.database.write_db(&dbstate)?;
+        parsed.last_item_id = new_id;
+        parsed.stories.insert(new_id, story);
+        parsed
+            .epics
+            .get_mut(&epic_id)
+            .ok_or_else(|| anyhow!("could not find epic in database!"))?
+            .stories
+            .push(new_id);
+
+        self.database.write_db(&parsed)?;
         Ok(new_id)
     }
 
     pub fn delete_epic(&self, epic_id: u32) -> Result<()> {
-        // 1. read db
-        let mut dbstate = self.read_db()?;
-        // 2. we would need to delete stories associated with epic
-        match &mut dbstate.epics.get(&epic_id) {
-            // check if we have the some variant
-            Some(epic) => {
-                // get all stories id as a HashSet so we get unique ids
-                let story_ids_to_remove: HashSet<_> = epic.stories.iter().collect();
+        let mut parsed = self.database.read_db()?;
 
-                // remove stories from stories hashmap
-                dbstate
-                    // we use retain to keep the stories that are not in the story_ids_to_remove
-                    .stories
-                    // retain only the stories that are not in the story_ids_to_remove
-                    // that deletes the stories from the stories hashmap
-                    // this is the most efficient way to delete items from a hashmap
-                    .retain(|k, _| !story_ids_to_remove.contains(k));
-            }
-            None => return Err(anyhow!("Epic with id {} not found", epic_id)),
+        for story_id in &parsed
+            .epics
+            .get(&epic_id)
+            .ok_or_else(|| anyhow!("could not find epic in database!"))?
+            .stories
+        {
+            parsed.stories.remove(story_id);
         }
 
-        // 3. delete epic
-        dbstate.epics.remove(&epic_id);
+        parsed.epics.remove(&epic_id);
 
-        // 4. write db
-        self.database.write_db(&dbstate)?;
+        self.database.write_db(&parsed)?;
         Ok(())
     }
 
     pub fn delete_story(&self, epic_id: u32, story_id: u32) -> Result<()> {
-        let mut dbstate = self.read_db()?;
+        let mut parsed = self.database.read_db()?;
 
-        // we get the epic from epics using epic_id
-        match dbstate.epics.get_mut(&epic_id) {
-            Some(epic) =>
-            // next using epic we remove the entry from stories vector
-            {
-                epic.stories.retain(|&id| id != story_id)
-            }
-            None => return Err(anyhow!("Epic with id {} not found", epic_id)),
-        }
+        let epic = parsed
+            .epics
+            .get_mut(&epic_id)
+            .ok_or_else(|| anyhow!("could not find epic in database!"))?;
 
-        // next we get the story from stories using story_id
-        // note we dont need a mutable dbstate here to remove stories
-        match dbstate.stories.get(&story_id) {
-            Some(_) => {
-                // remove the story from stories hashmap
-                dbstate.stories.remove(&story_id);
-            }
-            None => return Err(anyhow!("Story with id {} not found", story_id)),
-        }
+        let story_index = epic
+            .stories
+            .iter()
+            .position(|id| id == &story_id)
+            .ok_or_else(|| anyhow!("story id not found in epic stories vector"))?;
+        epic.stories.remove(story_index);
 
-        // write to db
-        self.database.write_db(&dbstate)?;
+        parsed.stories.remove(&story_id);
+
+        self.database.write_db(&parsed)?;
         Ok(())
     }
 
     pub fn update_epic_status(&self, epic_id: u32, status: Status) -> Result<()> {
-        // 1. read db
-        let mut dbstate = self.read_db()?;
-        // 2. get epic using epic_id from epics hashmap
-        if let Some(epic) = dbstate.epics.get_mut(&epic_id) {
-            // 3. mutate the status
-            epic.status = status;
-        } else {
-            return Err(anyhow!("Epic with id {} not found", epic_id));
-        }
-        self.database.write_db(&dbstate)?;
-        // 4. write to db
+        let mut parsed = self.database.read_db()?;
+
+        parsed
+            .epics
+            .get_mut(&epic_id)
+            .ok_or_else(|| anyhow!("could not find epic in database!"))?
+            .status = status;
+
+        self.database.write_db(&parsed)?;
         Ok(())
     }
 
     pub fn update_story_status(&self, story_id: u32, status: Status) -> Result<()> {
-        //1. read db
-        let mut dbstate = self.read_db()?;
-        //2. get story using story_id from stories hashmap
-        dbstate
+        let mut parsed = self.database.read_db()?;
+
+        parsed
             .stories
             .get_mut(&story_id)
-            .ok_or_else(|| anyhow!("Story with id {} not found", story_id))?
+            .ok_or_else(|| anyhow!("could not find story in database!"))?
             .status = status;
 
-        //3. update status of story
-        //4. write to db
-        self.database.write_db(&dbstate)?;
+        self.database.write_db(&parsed)?;
         Ok(())
     }
 }
@@ -483,16 +459,11 @@ mod tests {
 
         #[test]
         fn read_db_should_fail_with_invalid_json() {
-            // 1. Arrange
-            // create a tempfile
             let mut tmpfile = tempfile::NamedTempFile::new().unwrap();
-            // set up json string
+
             let file_contents = r#"{ "last_item_id": 0 epics: {} stories {} }"#;
-            // execute write operation on file_contents to tmpfile
             write!(tmpfile, "{}", file_contents).unwrap();
 
-            //2 . Act
-            // use tmpfile  , cast to str  to get path
             let db = JSONFileDatabase {
                 file_path: tmpfile
                     .path()
@@ -503,7 +474,6 @@ mod tests {
 
             let result = db.read_db();
 
-            //3. Assert
             assert_eq!(result.is_err(), true);
         }
 
@@ -574,3 +544,4 @@ mod tests {
         }
     }
 }
+
