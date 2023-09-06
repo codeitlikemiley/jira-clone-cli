@@ -160,7 +160,6 @@ impl Page for StoryDetail {
 
         println!("------------------------------ STORY ------------------------------");
         println!("  id  |     name     |         description         |    status    ");
-
         let id_col = get_column_string(&self.story_id.to_string(), 5);
         let name_col = get_column_string(&story.name, 12);
         let desc_col = get_column_string(&story.description, 27);
@@ -479,3 +478,4 @@ mod tests {
         }
     }
 }
+

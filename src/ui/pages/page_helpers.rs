@@ -70,3 +70,4 @@ mod tests {
         assert_eq!(get_column_string(text4, width), "tes...".to_owned());
     }
 }
+
