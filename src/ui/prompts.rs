@@ -29,7 +29,7 @@ fn create_epic_prompt() -> Epic {
     let name = get_user_input();
     println!("Epic Description:");
     let description = get_user_input();
-    Epic::new(name, description)
+    Epic::new(name.trim().to_owned(), description.trim().to_owned())
 }
 
 fn create_story_prompt() -> Story {
@@ -38,7 +38,7 @@ fn create_story_prompt() -> Story {
     let name = get_user_input();
     println!("Story Description:");
     let description = get_user_input();
-    Story::new(name, description)
+    Story::new(name.trim().to_owned(), description.trim().to_owned())
 }
 
 fn delete_epic_prompt() -> bool {
@@ -82,3 +82,4 @@ fn update_status_prompt() -> Option<Status> {
     }
     None
 }
+
